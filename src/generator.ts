@@ -471,28 +471,6 @@ config['rule-providers'] = {
     });
   }
 
-  // 只有當節點明確給出以 https:// 開頭的 DoH 時，才在 Clash 中掛載 nameserver-policy
-  const nodesWithCustomDoh = nodes.filter(n => n.ech && n.echDoh && /^https?:\/\//i.test(n.echDoh));
-  if (nodesWithCustomDoh.length > 0 && config.dns && typeof config.dns === 'object') {
-    const dnsObj = config.dns as Record<string, unknown>;
-    if (!dnsObj['nameserver-policy'] || typeof dnsObj['nameserver-policy'] !== 'object') {
-      dnsObj['nameserver-policy'] = {};
-    }
-    const policy = dnsObj['nameserver-policy'] as Record<string, string[]>;
-    const echPolicies = new Map<string, string>();
-for (const n of nodesWithCustomDoh) {
-  const domain = n.echQueryServerName || 'cloudflare-ech.com';
-
-  if (!echPolicies.has(domain)) {
-    echPolicies.set(domain, n.echDoh!);
-  }
-}
-
-for (const [domain, doh] of echPolicies) {
-  policy[domain] = [doh];
-}
-  }
-
   return yaml.dump(config, { indent: 2, noRefs: true });
 }
 
