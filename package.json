@@ -1,6 +1,6 @@
 {
   "name": "my-sub-converter",
-  "version": "3.6.0-edt2.1",
+  "version": "3.6.1-edt2.1",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
