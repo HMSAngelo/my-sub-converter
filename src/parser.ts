@@ -710,7 +710,12 @@ function parseShadowsocks(urlStr: string): ProxyNode {
     cl.smux = { enabled: true };
   }
   if (node.ech) {
-    cl['ech-opts'] = { enable: true };
+    cl['ech-opts'] = {
+  enable: true,
+  ...(node.echQueryServerName
+    ? { 'query-server-name': node.echQueryServerName }
+    : {})
+};
   }
   node.clashObj = cl;
 
@@ -863,7 +868,12 @@ function parseVless(urlStr: string): ProxyNode {
   };
 
   if (node.alpn) cl.alpn = node.alpn;
-  if (node.ech) cl['ech-opts'] = { enable: true };
+  if (node.ech) cl['ech-opts'] = {
+  enable: true,
+  ...(node.echQueryServerName
+    ? { 'query-server-name': node.echQueryServerName }
+    : {})
+};
   if (node.flow) cl.flow = node.flow; 
   if (node.reality) {
     cl.reality = true;
@@ -1295,7 +1305,12 @@ function parseTrojan(urlStr: string): ProxyNode {
     udp: true
   };
   if (node.ech) {
-    cl['ech-opts'] = { enable: true };
+    cl['ech-opts'] = {
+  enable: true,
+  ...(node.echQueryServerName
+    ? { 'query-server-name': node.echQueryServerName }
+    : {})
+};
   }
   node.clashObj = cl;
 
