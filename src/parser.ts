@@ -709,14 +709,8 @@ function parseShadowsocks(urlStr: string): ProxyNode {
   if (isTls) {
     cl.smux = { enabled: true };
   }
-  if (node.ech) {
-    cl['ech-opts'] = {
-  enable: true,
-  ...(node.echQueryServerName
-    ? { 'query-server-name': node.echQueryServerName }
-    : {})
-};
-  }
+  // EDT 2.0 会在转换完成后为 Clash 节点注入 ech-opts。
+  // 后端只保留 ECH 元数据，避免最终 YAML 出现重复键。
   node.clashObj = cl;
 
   return node;
@@ -868,12 +862,6 @@ function parseVless(urlStr: string): ProxyNode {
   };
 
   if (node.alpn) cl.alpn = node.alpn;
-  if (node.ech) cl['ech-opts'] = {
-  enable: true,
-  ...(node.echQueryServerName
-    ? { 'query-server-name': node.echQueryServerName }
-    : {})
-};
   if (node.flow) cl.flow = node.flow; 
   if (node.reality) {
     cl.reality = true;
@@ -1304,14 +1292,6 @@ function parseTrojan(urlStr: string): ProxyNode {
     'skip-cert-verify': node.skipCertVerify,
     udp: true
   };
-  if (node.ech) {
-    cl['ech-opts'] = {
-  enable: true,
-  ...(node.echQueryServerName
-    ? { 'query-server-name': node.echQueryServerName }
-    : {})
-};
-  }
   node.clashObj = cl;
 
   return node;
@@ -1384,6 +1364,9 @@ function parseClashProxyItem(p: Record<string, unknown>, index: number): ProxyNo
     }
 
     const clashObjCopy: Record<string, unknown> = { ...p };
+    // Clash 的 ECH 由 EDT 2.0 统一注入，避免导入现有 YAML 时重复输出。
+    delete clashObjCopy['ech-opts'];
+    delete clashObjCopy.ech;
     clashObjCopy.network = network;
     if (!alpn) {
       delete clashObjCopy.alpn;
