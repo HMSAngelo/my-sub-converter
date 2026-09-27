@@ -3,6 +3,12 @@ import yaml from 'js-yaml';
 import { Env, ProxyNode } from './types';
 import { REMOTE_CONFIG, FALLBACK_SINGBOX_RULES, FALLBACK_CLASH_RULES } from './constants';
 import { utf8ToBase64 } from './utils';
+import {
+  ParsedSubconverterConfig,
+  createClashGroups,
+  createClashRules,
+  createSingBoxGroups
+} from './subconverter-config';
 
 // --- 明文 URI / 節點行格式導出 ---
 export function toRawLinks(nodes: ProxyNode[]): string {
@@ -183,7 +189,12 @@ async function fetchTemplateDirect(
 }
 
 // --- Sing-Box 配置生成 ---
-export async function toSingBoxWithTemplate(nodes: ProxyNode[], _env?: Env, _forceRefresh = false): Promise<string> {
+export async function toSingBoxWithTemplate(
+  nodes: ProxyNode[],
+  _env?: Env,
+  _forceRefresh = false,
+  customConfig?: ParsedSubconverterConfig
+): Promise<string> {
   const text = await fetchTemplateDirect(REMOTE_CONFIG.singbox, FALLBACK_SINGBOX_RULES);
   const config = JSON.parse(text);
   
@@ -335,8 +346,19 @@ export async function toSingBoxWithTemplate(nodes: ProxyNode[], _env?: Env, _for
     });
   }
 
+  const customGroupTags = new Set<string>();
+  if (customConfig) {
+    const customGroups = createSingBoxGroups(customConfig, nodes);
+    customGroups.forEach(group => customGroupTags.add(String(group.tag || '')));
+    config.outbounds = config.outbounds.filter((out: Record<string, unknown>) => {
+      return !customGroupTags.has(String(out.tag || ''));
+    });
+    config.outbounds.unshift(...customGroups);
+  }
+
   config.outbounds.forEach((out: Record<string, unknown>) => {
     if (out.type === 'selector' || out.type === 'urltest') {
+      if (customGroupTags.has(String(out.tag || ''))) return;
       if (!Array.isArray(out.outbounds)) out.outbounds = [];
       const arr = out.outbounds as string[];
       allNodeTags.forEach(tag => {
@@ -349,8 +371,15 @@ export async function toSingBoxWithTemplate(nodes: ProxyNode[], _env?: Env, _for
 }
 
 // --- Clash Meta 配置生成 ---
-export async function toClashWithTemplate(nodes: ProxyNode[], _env?: Env, _forceRefresh = false): Promise<string> {
-  const text = await fetchTemplateDirect(REMOTE_CONFIG.clash, FALLBACK_CLASH_RULES);
+export async function toClashWithTemplate(
+  nodes: ProxyNode[],
+  _env?: Env,
+  _forceRefresh = false,
+  customConfig?: ParsedSubconverterConfig
+): Promise<string> {
+  const configuredBase = customConfig?.settings.clash_rule_base;
+  const templateUrl = configuredBase && /^https?:\/\//i.test(configuredBase) ? configuredBase : REMOTE_CONFIG.clash;
+  const text = await fetchTemplateDirect(templateUrl, FALLBACK_CLASH_RULES);
   const config = yaml.load(text) as Record<string, unknown>;
   
   const proxies = nodes.map(n => {
@@ -361,12 +390,22 @@ export async function toClashWithTemplate(nodes: ProxyNode[], _env?: Env, _force
   const proxyNames = proxies.map((p: Record<string, unknown>) => p.name as string);
 
   if (!Array.isArray(config.proxies)) config.proxies = [];
-  config.proxies.push(...proxies);
+  (config.proxies as Array<Record<string, unknown>>).push(...proxies);
 
   const lowRateNames = nodes.filter(n => n.multiplier !== undefined && n.multiplier < 1.0).map(n => n.name);
   const iplcNames = nodes.filter(n => n.isIplc).map(n => n.name);
 
-  if (Array.isArray(config['proxy-groups'])) {
+  if (customConfig) {
+    config['proxy-groups'] = createClashGroups(customConfig, nodes);
+    const enableRules = customConfig.settings.enable_rule_generator?.toLowerCase() !== 'false';
+    if (enableRules) {
+      const generated = createClashRules(customConfig);
+      config['rule-providers'] = generated.providers;
+      const keepOriginal = customConfig.settings.overwrite_original_rules?.toLowerCase() === 'false';
+      const originalRules = Array.isArray(config.rules) ? config.rules as string[] : [];
+      config.rules = keepOriginal ? [...originalRules, ...generated.rules] : generated.rules;
+    }
+  } else if (Array.isArray(config['proxy-groups'])) {
     const groups = config['proxy-groups'] as Array<Record<string, unknown>>;
 
     if (lowRateNames.length > 0) {

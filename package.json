@@ -1,12 +1,13 @@
 {
   "name": "my-sub-converter",
-  "version": "3.5.9",
+  "version": "3.6.0-edt2.1",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "argo": "tsx scripts/argo-converter.ts"
+    "argo": "tsx scripts/argo-converter.ts",
+    "check": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"

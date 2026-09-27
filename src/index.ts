@@ -13,6 +13,8 @@ import {
   toLoon
 } from './generator';
 import { deduplicateNodeNames, groupNodesByFlag } from './utils';
+import { DEFAULT_EDT_CONFIG } from './default-config';
+import { BUILTIN_PATH, loadSubconverterConfig } from './subconverter-config';
 
 const version = packageJson.version || '3.5.0';
 
@@ -155,6 +157,17 @@ export default {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, X-Password',
+        }
+      });
+    }
+
+    // Built-in EDT 2.0 external configuration. This URL can be used directly as config=.
+    if (request.method === 'GET' && url.pathname === BUILTIN_PATH) {
+      return new Response(DEFAULT_EDT_CONFIG, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=300'
         }
       });
     }
@@ -701,6 +714,8 @@ export default {
       if (excludeParam) filterQuery += `&exclude=${encodeURIComponent(excludeParam)}`;
       if (renameParam) filterQuery += `&rename=${encodeURIComponent(renameParam)}`;
       if (detectedProfileName) filterQuery += `&name=${encodeURIComponent(detectedProfileName)}`;
+      const requestedConfig = url.searchParams.get('config');
+      if (requestedConfig) filterQuery += `&config=${encodeURIComponent(requestedConfig)}`;
 
       const htmlInfo = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>轉換完成</title><style>body{background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:40px;text-align:center;}a{display:inline-block;margin:10px;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;}</style></head>
 <body>
@@ -722,8 +737,12 @@ export default {
     let fileExt = '.txt';
 
     try {
+      const customConfig = (target === 'clash' || target === 'singbox')
+        ? await loadSubconverterConfig(url.searchParams.get('config'), env, forceRefresh, url.origin)
+        : undefined;
+
       if (target === 'clash') {
-        result = await toClashWithTemplate(uniqueNodes, env, forceRefresh);
+        result = await toClashWithTemplate(uniqueNodes, env, forceRefresh, customConfig);
         contentType = 'text/yaml';
         fileExt = '.yaml';
       } else if (target === 'surge') {
@@ -743,7 +762,7 @@ export default {
         contentType = 'text/plain';
         fileExt = '.txt';
       } else {
-        result = await toSingBoxWithTemplate(uniqueNodes, env, forceRefresh);
+        result = await toSingBoxWithTemplate(uniqueNodes, env, forceRefresh, customConfig);
         contentType = 'application/json';
         fileExt = '.json';
       }

@@ -1,5 +1,5 @@
 // src/parser.ts
-import yaml from "js-yaml";
+import yaml from 'js-yaml';
 import { ProxyNode, WireGuardConfig, MasqueConfig } from "./types";
 import { safeBase64Decode, tryDecodeURIComponent } from "./utils";
 
@@ -329,7 +329,7 @@ function parseMasqueUri(urlStr: string): ProxyNode {
     type: 'masque',
     tag: name,
     server: parsed.hostname,
-    server_port: port,
+    server_port: parsed.port,
     private_key: privateKey,
     public_key: publicKey,
     ip: masqueConfig.localIpv4,

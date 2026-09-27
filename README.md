@@ -283,6 +283,7 @@ https://your-worker.workers.dev
 | :--- | :--- | :--- |
 | `url` | 原始訂閱連結、YAML 或節點內容（需 URL 編碼） | `https://example.com/sub` |
 | `target` | 目標格式：`clash` / `singbox` / `surge` / `quanx` / `loon` / `base64` | `target=clash` |
+| `config` | SubConverter `[custom]` 外部 `.ini`；可填網址或內建別名 `edt2-sg-us` | `config=edt2-sg-us` |
 | `include` | 僅保留符合正則之節點 | `include=HK\|TW` |
 | `exclude` | 排除符合正則之節點（自動相容乘號 `×`） | `exclude=5x\|官網` |
 | `rename` | 名稱替換（刪除：`DEL-字串`、替換：`A-B`、統改：`ALL-名稱`） | `rename=DEL-[69云]\|ALL-JP` |
@@ -297,6 +298,25 @@ https://your-worker.workers.dev/sub?url=<URL編碼>&target=clash&include=HK&rena
 # 讀取已存於雲端 KV 的短連結配置
 https://your-worker.workers.dev/<自訂短連結名稱>?target=singbox
 ```
+
+#### EDT 2.0 動態國家分組
+
+此版本會真正讀取 EDT 傳入的 `config=`，並依 `custom_proxy_group` 正則動態建立策略組。未傳 `config` 時會直接使用內建的「新加坡 + 美國 + ACL4SSR Full」配置。
+
+在 EDT 2.0 中填入：
+
+```text
+訂閱轉換後端：https://your-worker.workers.dev
+訂閱轉換配置文件：https://your-worker.workers.dev/config/edt2-cf-sg-us.ini
+```
+
+也可以直接測試：
+
+```http
+https://your-worker.workers.dev/sub?target=clash&config=edt2-sg-us&url=<URL編碼>
+```
+
+Clash/Mihomo 會得到新加坡與美國手選、獨立負載均衡、聯合負載均衡、自動測速、故障轉移，以及 ACL4SSR Full 去廣告分流。Sing-box 會建立對應的動態選擇與測速組，並保留原有 Sing-box 分流規則；Base64/v2rayN 輸出仍保持通用節點訂閱格式。
 
 ---
 
