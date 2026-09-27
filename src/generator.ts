@@ -400,7 +400,45 @@ export async function toClashWithTemplate(
     const enableRules = customConfig.settings.enable_rule_generator?.toLowerCase() !== 'false';
     if (enableRules) {
       const generated = createClashRules(customConfig);
-      config['rule-providers'] = generated.providers;
+     const existingProviders =
+  config['rule-providers'] &&
+  typeof config['rule-providers'] === 'object' &&
+  !Array.isArray(config['rule-providers'])
+    ? config['rule-providers'] as Record<string, Record<string, unknown>>
+    : {};
+
+const requiredDnsProviders: Record<string, Record<string, unknown>> = {
+  private: {
+    type: 'http',
+    behavior: 'domain',
+    format: 'mrs',
+    url: 'https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs',
+    path: './ruleset/private.mrs',
+    interval: 86400
+  },
+  cn: {
+    type: 'http',
+    behavior: 'domain',
+    format: 'mrs',
+    url: 'https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs',
+    path: './ruleset/cn.mrs',
+    interval: 86400
+  },
+  apple: {
+    type: 'http',
+    behavior: 'domain',
+    format: 'mrs',
+    url: 'https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs',
+    path: './ruleset/apple.mrs',
+    interval: 86400
+  }
+};
+
+config['rule-providers'] = {
+  ...requiredDnsProviders,
+  ...existingProviders,
+  ...generated.providers
+};
       const keepOriginal = customConfig.settings.overwrite_original_rules?.toLowerCase() === 'false';
       const originalRules = Array.isArray(config.rules) ? config.rules as string[] : [];
       config.rules = keepOriginal ? [...originalRules, ...generated.rules] : generated.rules;
@@ -441,10 +479,18 @@ export async function toClashWithTemplate(
       dnsObj['nameserver-policy'] = {};
     }
     const policy = dnsObj['nameserver-policy'] as Record<string, string[]>;
-    for (const n of nodesWithCustomDoh) {
-      const domain = n.echQueryServerName || 'cloudflare-ech.com';
-      policy[domain] = [n.echDoh!];
-    }
+    const echPolicies = new Map<string, string>();
+for (const n of nodesWithCustomDoh) {
+  const domain = n.echQueryServerName || 'cloudflare-ech.com';
+
+  if (!echPolicies.has(domain)) {
+    echPolicies.set(domain, n.echDoh!);
+  }
+}
+
+for (const [domain, doh] of echPolicies) {
+  policy[domain] = [doh];
+}
   }
 
   return yaml.dump(config, { indent: 2, noRefs: true });
