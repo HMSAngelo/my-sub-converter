@@ -1,0 +1,21 @@
+{
+  "name": "my-sub-converter",
+  "version": "3.5.9",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "argo": "tsx scripts/argo-converter.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "@types/js-yaml": "^4.0.9",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.28.1"
+  }
+}

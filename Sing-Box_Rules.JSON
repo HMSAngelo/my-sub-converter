@@ -1,0 +1,162 @@
+{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "http_clients": [
+    {
+      "tag": "default"
+    }
+  ],
+  "dns": {
+    "servers": [
+      {
+        "tag": "remote-dns",
+        "type": "https",
+        "server": "8.8.8.8",
+        "detour": "🚀 節點選擇"
+      },
+      {
+        "tag": "remote-cf-dns",
+        "type": "https",
+        "server": "1.1.1.1",
+        "detour": "🚀 節點選擇"
+      },
+      {
+        "tag": "system-dns",
+        "type": "local"
+      },
+      {
+        "tag": "local-dns",
+        "type": "local"
+      },
+      {
+        "tag": "fakeip-dns",
+        "type": "fakeip",
+        "inet4_range": "198.18.0.0/15"
+      }
+    ],
+    "rules": [
+      {
+        "clash_mode": "Direct",
+        "server": "system-dns"
+      },
+      {
+        "clash_mode": "Global",
+        "server": "fakeip-dns"
+      },
+      {
+        "rule_set": "rs-ads",
+        "action": "reject"
+      },
+      {
+        "rule_set": [
+          "rs-private"
+        ],
+        "server": "system-dns"
+      },
+      {
+        "rule_set": [
+          "rs-cn"
+        ],
+        "server": "system-dns",
+        "disable_cache": true
+      },
+      {
+        "rule_set": [
+          "rs-apple"
+        ],
+        "server": "system-dns",
+        "disable_cache": true
+      },
+      {
+        "rule_set": [
+          "rs-geolocation-!cn",
+          "rs-ai"
+        ],
+        "server": "fakeip-dns"
+      }
+    ],
+    "final": "remote-dns",
+    "strategy": "ipv4_only"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "tun0",
+      "address": [
+        "172.19.0.1/30"
+      ],
+      "stack": "mixed",
+      "auto_route": true,
+      "strict_route": true
+    }
+  ],
+  "outbounds": [
+    { "type": "selector", "tag": "🚀 節點選擇", "outbounds": ["⚡ 自動選擇", "DIRECT"] },
+    { "type": "urltest", "tag": "⚡ 自動選擇", "outbounds": [], "url": "https://www.gstatic.com/generate_204", "interval": "3m", "tolerance": 50 },
+    { "type": "selector", "tag": "💬 AI 服務", "outbounds": ["⚡ 自動選擇", "🚀 節點選擇"] },
+    { "type": "selector", "tag": "🍎 蘋果服務", "outbounds": ["DIRECT", "🚀 節點選擇"] },
+    { "type": "selector", "tag": "Ⓜ️ 微軟服務", "outbounds": ["DIRECT", "🚀 節點選擇"] },
+    { "type": "selector", "tag": "🎮 遊戲平台", "outbounds": ["DIRECT", "🚀 節點選擇"] },
+    { "type": "selector", "tag": "🌐 非中國", "outbounds": ["🚀 節點選擇", "DIRECT"] },
+    { "type": "selector", "tag": "🇨🇳 國內服務", "outbounds": ["DIRECT", "🚀 節點選擇"] },
+    { "type": "selector", "tag": "🏠 私有網絡", "outbounds": ["DIRECT"] },
+    { "type": "selector", "tag": "🐟 漏網之魚", "outbounds": ["🚀 節點選擇", "DIRECT"] },
+    { "type": "selector", "tag": "🛑 廣告攔截", "outbounds": ["REJECT", "DIRECT"] },
+    
+    { "type": "direct", "tag": "DIRECT" },
+    { "type": "block", "tag": "REJECT" }
+  ],
+  "route": {
+    "default_domain_resolver": "system-dns",
+    "default_http_client": "default",
+    "rule_set": [
+      { "type": "remote", "tag": "rs-ai", "format": "binary", "url": "https://raw.githubusercontent.com/sammy0101/myself/refs/heads/main/geosite_ai_hk_proxy.srs" },
+      { "type": "remote", "tag": "rs-apple", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/apple.srs" },
+      { "type": "remote", "tag": "rs-microsoft", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/microsoft.srs" },
+      { "type": "remote", "tag": "rs-steam", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/steam.srs" },
+      { "type": "remote", "tag": "rs-epicgames", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/epicgames.srs" },
+      { "type": "remote", "tag": "rs-ea", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/ea.srs" },
+      { "type": "remote", "tag": "rs-ubisoft", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/ubisoft.srs" },
+      { "type": "remote", "tag": "rs-blizzard", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/blizzard.srs" },
+      { "type": "remote", "tag": "rs-geolocation-!cn", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/geolocation-!cn.srs" },
+      { "type": "remote", "tag": "rs-cn", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/cn.srs" },
+      { "type": "remote", "tag": "ip-cn", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/cn.srs" },
+      { "type": "remote", "tag": "rs-ads", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/category-ads-all.srs" },
+      { "type": "remote", "tag": "rs-private", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/private.srs" },
+      { "type": "remote", "tag": "ip-private", "format": "binary", "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/private.srs" }
+    ],
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      { "protocol": "dns", "action": "hijack-dns" },
+      { "clash_mode": "Direct", "outbound": "DIRECT" },
+      { "clash_mode": "Global", "outbound": "🚀 節點選擇" },
+      { "rule_set": "rs-ads", "outbound": "REJECT" },
+      { "rule_set": ["rs-private", "ip-private"], "outbound": "🏠 私有網絡" },
+      { "rule_set": "rs-ai", "outbound": "💬 AI 服務" },
+      { "rule_set": "rs-microsoft", "outbound": "Ⓜ️ 微軟服務" },
+      { "rule_set": ["rs-steam", "rs-epicgames", "rs-ea", "rs-ubisoft", "rs-blizzard"], "outbound": "🎮 遊戲平台" },
+      { "rule_set": "rs-geolocation-!cn", "outbound": "🌐 非中國" },
+      { "rule_set": "rs-apple", "outbound": "🍎 蘋果服務" },
+      { "rule_set": ["rs-cn", "ip-cn"], "outbound": "🇨🇳 國內服務" },
+      { "outbound": "🐟 漏網之魚" }
+    ],
+    "auto_detect_interface": true
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "store_fakeip": true
+    },
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui": "ui",
+      "secret": "",
+      "default_mode": "rule"
+    }
+  }
+}
